@@ -21,11 +21,9 @@ const imapAuth = (email,password)=>{
   imap.connect();
   return new Promise((resolve,reject)=>{
     imap.once('error', function(err) {
-      console.log("abc rehjcet")
      reject(err)
    });
    imap.once("ready",()=>{
-    console.log("resoleve");
     resolve(imap);
    });
    imap.once("end", ()=>{
