@@ -15,18 +15,20 @@ const connectImap = (email, password) => {
   return imap;
 };
 
-const getMailWithImap = (email, password, count = "*", type = ["ALL"]) => {
+const getMailWithImap = (email, password, count, type = ["ALL"]) => {
   let mailListArray = [];
   const imap = connectImap(email, password);
   imap.connect();
   return new Promise((resolve, reject) => {
     imap.once("ready", () => {
       imap.openBox("INBOX", true, (err, box) => {
-        imap.search([["X-GM-RAW", "has:attachment"]], (err, results) => {
+        console.log("abc gelen type", type);
+        imap.search(type, (err, results) => {
+          console.log("abc results", results);
           var f = imap.fetch(results, { bodies: "" });
           f.on("message", function (msg, seqno) {
             msg.once("attributes", function (attrs) {
-              console.log("attrs.flags", attrs.flags);
+              console.log("attrs", attrs);
             });
             msg.on("body", function (stream, info) {
               simpleParser(stream, (err, mail) => {
