@@ -15,6 +15,13 @@ const connectImap = (email, password) => {
   return imap;
 };
 
+const getMailAttr = (msg) => {
+  msg.once("attributes", (attr) => {
+    console.log("abc attr", attr);
+    return attr;
+  });
+};
+
 const getMailWithImap = (email, password, count, type = ["ALL"]) => {
   let mailListArray = [];
   const imap = connectImap(email, password);
@@ -27,17 +34,23 @@ const getMailWithImap = (email, password, count, type = ["ALL"]) => {
           console.log("abc results", results);
           var f = imap.fetch(results, { bodies: "" });
           f.on("message", function (msg, seqno) {
-            msg.once("attributes", function (attrs) {
-              console.log("attrs", attrs);
-            });
             msg.on("body", function (stream, info) {
               simpleParser(stream, (err, mail) => {
                 const { html, to, from, attachments } = mail;
+                //usera dönülecekler
+                //console.log("abc 1 ", from.value);
+                //console.log("abc 2", mail.subject);
+                console.log("abc 3", mail.messageId);
                 const mailInfoObject = {
                   from: from.value[0],
-                  text: mail.text,
+                  subject: mail.subject,
+                  id: null,
                 };
                 mailListArray.push(mailInfoObject);
+                const atttrrsss = msg.once("attributes", (attrs) => {
+                  return attrs;
+                });
+                console.log("denme", atttrrsss);
               });
             });
           });
