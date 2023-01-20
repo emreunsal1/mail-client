@@ -15,47 +15,62 @@ const connectImap = (email, password) => {
   return imap;
 };
 
-const getMailAttr = (msg) => {
-  msg.once("attributes", (attr) => {
-    console.log("abc attr", attr);
-    return attr;
+const markedSeen = (imap, results) => {
+  imap.setFlags(results, ["\\Seen"], function (err) {
+    if (!err) {
+      console.log("marked as read");
+    } else {
+      console.log(JSON.stringify(err, null, 2));
+    }
   });
 };
 
-const getMailWithImap = (email, password, count, type = ["ALL"]) => {
+const getMailWithImap = ({
+  email,
+  password,
+  type = ["ALL"],
+  process = null,
+  count = "*",
+}) => {
   let mailListArray = [];
+
   const imap = connectImap(email, password);
   imap.connect();
   return new Promise((resolve, reject) => {
     imap.once("ready", () => {
-      imap.openBox("INBOX", true, (err, box) => {
-        console.log("abc gelen type", type);
+      imap.openBox("INBOX", false, (err, box) => {
         imap.search(type, (err, results) => {
-          console.log("abc results", results);
-          var f = imap.fetch(results, { bodies: "" });
-          f.on("message", function (msg, seqno) {
+          if (process === "detail") markedSeen(imap, results);
+          let fetch;
+          if (count === "*") {
+            fetch = imap.fetch(results, {
+              bodies: "",
+            });
+          } else {
+            fetch = imap.seq.fetch(count, {
+              bodies: "",
+            });
+          }
+          fetch.on("message", function (msg, seqno) {
+            const mailInfoObject = {
+              from: null,
+              subject: null,
+              id: null,
+            };
             msg.on("body", function (stream, info) {
               simpleParser(stream, (err, mail) => {
                 const { html, to, from, attachments } = mail;
-                //usera dönülecekler
-                //console.log("abc 1 ", from.value);
-                //console.log("abc 2", mail.subject);
-                console.log("abc 3", mail.messageId);
-                const mailInfoObject = {
-                  from: from.value[0],
-                  subject: mail.subject,
-                  id: null,
-                };
-                mailListArray.push(mailInfoObject);
-                const atttrrsss = msg.once("attributes", (attrs) => {
-                  return attrs;
-                });
-                console.log("denme", atttrrsss);
+                mailInfoObject.from = from.value[0];
+                mailInfoObject.subject = mail.subject;
               });
             });
-          });
-          f.once("end", () => {
-            imap.end();
+            msg.once("attributes", (attrs) => {
+              mailInfoObject.id = attrs.uid;
+            });
+            fetch.once("end", () => {
+              mailListArray.push(mailInfoObject);
+              imap.end();
+            });
           });
         });
       });
