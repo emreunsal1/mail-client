@@ -3,7 +3,7 @@ const GmailQueries = {
     return [["X-GM-RAW", `before:${date}`]];
   },
   getUnread() {
-    return ["X-GM-RAW", "has:unread"];
+    return [["X-GM-RAW", "has:unread"]];
   },
 };
 
